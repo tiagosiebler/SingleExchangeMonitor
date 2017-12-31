@@ -16,13 +16,13 @@ const binanceRest = new api.BinanceRest({
     disableBeautification: process.env.restBeautify != 'true'
 });
 
+// make module dynamic later
 var activePairs, exchangeAPI = {};
-
-// make more dynamic in future
 if(process.env.activeExchange == 'binance'){
   activePairs = process.env.binancePairs;
   exchangeAPI.WS = new api.BinanceWS();
 }
+
 
 // initialise root controller
 var ctrl          = {};
@@ -31,28 +31,46 @@ var ctrl          = {};
         title: 'Live Binance Trades - ' + activePairs
       }
     },
-    ctrl.UI       = require('./lib/UI.js')(ctrl.options),
-    ctrl.events   = {};
-
-// make this a module, later...
-// handler for WS callbacks
-ctrl.events.wsEvent = (event) => {
-  if(event.eventType){
-    var type = event.eventType;
-    if(type == 'depthUpdate'){
-  
-    }else if(type == 'aggTrade'){
-      ctrl.UI.addTrade(event.eventTime, event.symbol, event.tradeId, event.price, event.quantity);
-      // console.log("handle.wsEvent().aggTrade(): ", event);
-    }else{
-      //console.log("handle.wsEvent(): ", event);
-    }
-  }
-},
-
-// load up all currencies and initialise websockets for each
-ctrl.currencyCore         = require('./lib/CurrencyCore.js')(activePairs, exchangeAPI, ctrl);
+    ctrl.UI               = require('./lib/UI.js')(ctrl.options),
+    ctrl.events           = require('./lib/EventsCore.js')(ctrl);
     
+    ctrl.currencyCore     = require('./lib/CurrencyCore.js')(activePairs, exchangeAPI, ctrl);
+    ctrl.storage          = {};
+    ctrl.storage.candidates = [];
+    ctrl.storage.streams  = []
+    ctrl.storage.streamTick = (stream, key)=>{
+      ctrl.storage.streams[key] = stream;
+      ctrl.storage.candidates = ctrl.currencyCore.getCandidatesFromStream(stream);
+      
+      ctrl.UI.updateTickers(ctrl.storage.candidates);  
+    };
+    
+    // load up all currencies and initialise websockets for each
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+    unused stuff for later
+*/    
 
 /*
  * onUserData requires an instance of BinanceRest in order to make the necessary startUserDataStream and
